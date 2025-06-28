@@ -6,10 +6,10 @@ RUN apt-get update && apt-get install -y python3-distutils && rm -rf /var/lib/ap
 # Set workdir
 WORKDIR /app
 
-# Copy project files into container
+# Copy project files
 COPY . .
 
-# Install Python dependencies (including Django)
+# Install dependencies
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Expose port
@@ -17,5 +17,3 @@ EXPOSE 8000
 
 # Command to run server
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-
-
