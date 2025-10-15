@@ -34,7 +34,7 @@ spec:
 
       - name: todo-app
 
-        image: trainwithshubham/django-todo:v1
+        image: trainwithshubham/django-todo:latest
 
         ports:
 
