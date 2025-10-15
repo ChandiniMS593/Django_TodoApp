@@ -1,0 +1,23 @@
+name: Deploy to VPN Cluster
+
+on:
+  push:
+    branches:
+      - develop   # Trigger on commits to develop branch
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, vpn-runner]   # your self-hosted runner label
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Kubernetes
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.29.0'  # match your k8s cluster version
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/   # replace with path to your k8s YAMLs
