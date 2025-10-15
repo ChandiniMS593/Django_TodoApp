@@ -15,6 +15,5 @@ spec:
     image: trainwithshubham/django-todo:latest
 
     ports:
-
     - containerPort: 8000
 
