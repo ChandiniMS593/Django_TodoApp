@@ -46,7 +46,9 @@ jobs:
           IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
         run: |
           CLEAN_SECRET=$(printf '%s' "$WEBHOOK_SECRET" | tr -d '')
+          echo $CLEAN_SECRET
           SIGNATURE=$(openssl dgst -sha256 -hmac "$CLEAN_SECRET" payload.json | awk '{print $2}')
+          echo $SIGNATURE
           curl -k -X POST "${{ secrets.SSP_DEPLOY_URL }}" \
             -H "Content-Type: application/json" \
             -H "X-GitHub-Event: push" \
