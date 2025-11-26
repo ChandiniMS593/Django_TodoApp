@@ -1,23 +1,60 @@
-name: Deploy to VPN Cluster
+name: Deploy To SSP Environment
 
 on:
   push:
-    branches:
-      - develop   # Trigger on commits to develop branch
+    branches: ["develop"]
 
 jobs:
   deploy:
-    runs-on: [self-hosted, vpn-runner]   # your self-hosted runner label
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Kubernetes
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.29.0'  # match your k8s cluster version
-
-      - name: Apply Kubernetes manifests
+      - name: Collect Git metadata
+        id: gitinfo
         run: |
-          kubectl apply -f k8s/   # replace with path to your k8s YAMLs
+          REPO_URL=$(git config --get remote.origin.url | sed 's/.git$//')
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          COMMIT=$(git rev-parse HEAD)
+          echo "repo_url=" >> $GITHUB_OUTPUT
+          echo "branch=" >> $GITHUB_OUTPUT
+          echo "commit=" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub-style payload
+        run: |
+          cat > payload.json << 'EOF'
+{
+  "ref": "refs/heads/${{ steps.gitinfo.outputs.branch }}",
+  "repository": {
+    "html_url": "${{ steps.gitinfo.outputs.repo_url }}"
+  },
+  "head_commit": {
+    "id": "${{ steps.gitinfo.outputs.commit }}",
+    "message": "$(git log -1 --pretty=%s)",
+    "timestamp": "$(git log -1 --pretty=%cI)"
+  }
+}
+EOF
+          jq -c . payload.json | tr -d '
+' > payload_compact.json
+          mv payload_compact.json payload.json
+          perl -pi -e 'chomp if eof' payload.json
+
+      - name: Trigger internal SSP webhook handler
+        env:
+          WEBHOOK_SECRET: ${{ secrets.SSP_SECRET }}
+          IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
+        run: |
+          CLEAN_SECRET=$(printf '%s' "$WEBHOOK_SECRET" | tr -d '
+')
+          SIGNATURE=$(openssl dgst -sha256 -hmac "$CLEAN_SECRET" payload.json | awk '{print $2}')
+          curl -k -X POST "${{ secrets.SSP_DEPLOY_URL }}" \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Event: push" \
+            -H "X-Hub-Signature-256: sha256=$SIGNATURE" \
+            -H "X-SSP-IMAGE: $IMAGE_NAME" \
+            -H "X-SSP-TAG: $GITHUB_SHA" \
+            -H "X-SSP-PATH: k8s//" \
+            -d @payload.json
