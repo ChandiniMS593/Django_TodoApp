@@ -23,7 +23,7 @@ jobs:
 
       - name: Create GitHub-style payload
         run: |
-          cat > payload.json << 'EOF'
+          cat > payload.json << EOF
           {
           "ref": "refs/heads/${GIT_BRANCH}",
           "repository": {
