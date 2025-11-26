@@ -1,4 +1,4 @@
-name: Deploy To SSP Environment
+name: Deploy To SSP Environment.
 
 on:
   push:
