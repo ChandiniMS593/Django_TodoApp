@@ -15,28 +15,27 @@ jobs:
       - name: Collect Git metadata
         id: gitinfo
         run: |
-          REPO_URL=$(git config --get remote.origin.url | sed 's/.git$//')
-          BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          COMMIT=$(git rev-parse HEAD)
-          echo "repo_url=" >> $GITHUB_OUTPUT
-          echo "branch=" >> $GITHUB_OUTPUT
-          echo "commit=" >> $GITHUB_OUTPUT
+          echo "GIT_REPO_URL=$(git config --get remote.origin.url | sed 's/.git$//')" >> $GITHUB_ENV
+          echo "GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+          echo "GIT_COMMIT=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          echo "GIT_MESSAGE=$(git log -1 --pretty=%s)" >> $GITHUB_ENV
+          echo "GIT_TIMESTAMP=$(git log -1 --pretty=%cI)" >> $GITHUB_ENV
 
       - name: Create GitHub-style payload
         run: |
           cat > payload.json << 'EOF'
-            {
-            "ref": "refs/heads/${{ steps.gitinfo.outputs.branch }}",
-            "repository": {
-                "html_url": "${{ steps.gitinfo.outputs.repo_url }}"
-            },
-            "head_commit": {
-                "id": "${{ steps.gitinfo.outputs.commit }}",
-                "message": "$(git log -1 --pretty=%s)",
-                "timestamp": "$(git log -1 --pretty=%cI)"
+          {
+          "ref": "refs/heads/${GIT_BRANCH}",
+          "repository": {
+            "html_url": "${GIT_REPO_URL}"
+          },
+          "head_commit": {
+              "id": "${GIT_COMMIT}",
+              "message": "${GIT_MESSAGE}",
+              "timestamp": "${GIT_TIMESTAMP}"
             }
-            }
-            EOF
+          }
+          EOF
           jq -c . payload.json | tr -d '' > payload_compact.json
           mv payload_compact.json payload.json
           perl -pi -e 'chomp if eof' payload.json
