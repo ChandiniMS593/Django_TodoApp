@@ -25,20 +25,19 @@ jobs:
       - name: Create GitHub-style payload
         run: |
           cat > payload.json << 'EOF'
-{
-  "ref": "refs/heads/${{ steps.gitinfo.outputs.branch }}",
-  "repository": {
-    "html_url": "${{ steps.gitinfo.outputs.repo_url }}"
-  },
-  "head_commit": {
-    "id": "${{ steps.gitinfo.outputs.commit }}",
-    "message": "$(git log -1 --pretty=%s)",
-    "timestamp": "$(git log -1 --pretty=%cI)"
-  }
-}
-EOF
-          jq -c . payload.json | tr -d '
-' > payload_compact.json
+          {
+            "ref": "refs/heads/${{ steps.gitinfo.outputs.branch }}",
+            "repository": {
+              "html_url": "${{ steps.gitinfo.outputs.repo_url }}"
+            },
+            "head_commit": {
+              "id": "${{ steps.gitinfo.outputs.commit }}",
+              "message": "$(git log -1 --pretty=%s)",
+              "timestamp": "$(git log -1 --pretty=%cI)"
+            }
+          }
+          EOF
+          jq -c . payload.json | tr -d '' > payload_compact.json
           mv payload_compact.json payload.json
           perl -pi -e 'chomp if eof' payload.json
 
@@ -47,8 +46,7 @@ EOF
           WEBHOOK_SECRET: ${{ secrets.SSP_SECRET }}
           IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
         run: |
-          CLEAN_SECRET=$(printf '%s' "$WEBHOOK_SECRET" | tr -d '
-')
+          CLEAN_SECRET=$(printf '%s' "$WEBHOOK_SECRET" | tr -d '')
           SIGNATURE=$(openssl dgst -sha256 -hmac "$CLEAN_SECRET" payload.json | awk '{print $2}')
           curl -k -X POST "${{ secrets.SSP_DEPLOY_URL }}" \
             -H "Content-Type: application/json" \
