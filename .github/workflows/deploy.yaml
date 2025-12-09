@@ -4,11 +4,11 @@ on:
   push:
     branches: ["develop"]
     paths:
-      - '.**'
+      - './**'
 
 jobs:
   deploy:
-    #needs: build-and-push     #modify according to the CI job defined
+   # needs: build-and-push
     runs-on: ubuntu-latest
 
     steps:
@@ -26,27 +26,26 @@ jobs:
 
       - name: Create GitHub-style payload
         run: |
-          cat > payload.json << EOF
-            {
+          cat > payload.json <<'EOF'
+          {
             "ref": "refs/heads/$GIT_BRANCH",
             "repository": {
-                "html_url": "$GIT_REPO_URL"
+              "html_url": "$GIT_REPO_URL"
             },
             "head_commit": {
-                "id": "$GIT_COMMIT",
-                "message": "$GIT_MESSAGE",
-                "timestamp": "$GIT_TIMESTAMP"
-                }
+              "id": "$GIT_COMMIT",
+              "message": "$GIT_MESSAGE",
+              "timestamp": "$GIT_TIMESTAMP"
             }
-            EOF
-          jq -c . payload.json | tr -d '' > payload_compact.json
+          }
+          EOF
+          jq -c . payload.json > payload_compact.json
           mv payload_compact.json payload.json
           perl -pi -e 'chomp if eof' payload.json
 
       - name: Trigger internal SSP webhook handler
         env:
           WEBHOOK_SECRET: ${{ secrets.SSP_SECRET }}
-          
         run: |
           CLEAN_SECRET=$(printf '%s' "$WEBHOOK_SECRET" | tr -d '')
           SIGNATURE=$(openssl dgst -sha256 -hmac "$CLEAN_SECRET" payload.json | awk '{print $2}')
