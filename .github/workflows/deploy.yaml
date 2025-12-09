@@ -37,7 +37,7 @@ jobs:
             "actor": "${{ github.actor }}",
             "event_name": "${{ github.event_name }}"
           }
-         EOF
+          EOF
           jq -c . payload.json > payload_compact.json
           mv payload_compact.json payload.json
           perl -pi -e 'chomp if eof' payload.json
