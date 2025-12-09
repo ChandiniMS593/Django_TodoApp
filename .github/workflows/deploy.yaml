@@ -41,7 +41,7 @@ jobs:
           mv payload_compact.json payload.json
           perl -pi -e 'chomp if eof' payload.json
 
-      - name: Trigger internal SSP webhook handler
+      - name: Trigge internal SSP webhook handler
         env:
           WEBHOOK_SECRET: ${{ secrets.SSP_SECRET }}
         run: |
