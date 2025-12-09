@@ -27,18 +27,17 @@ jobs:
       - name: Create GitHub-style payload
         run: |
           cat > payload.json <<'EOF'
-{
-  "ref": "refs/heads/$GIT_BRANCH",
-  "repository": {
-    "html_url": "$GIT_REPO_URL"
-  },
-  "head_commit": {
-    "id": "$GIT_COMMIT",
-    "message": "$GIT_MESSAGE",
-    "timestamp": "$GIT_TIMESTAMP"
-  }
-}
-EOF
+          {
+            "repository": {
+              "full_name": "${{ github.repository }}"
+            },
+            "ref": "refs/heads/${{ github.ref_name }}",
+            "sha": "${{ github.sha }}",
+            "workflow": "deploy.yaml",
+            "actor": "${{ github.actor }}",
+            "event_name": "${{ github.event_name }}"
+          }
+         EOF
           jq -c . payload.json > payload_compact.json
           mv payload_compact.json payload.json
           perl -pi -e 'chomp if eof' payload.json
